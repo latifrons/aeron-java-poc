@@ -1,6 +1,7 @@
 package latifrons;
 
 import io.aeron.Aeron;
+import io.aeron.FragmentAssembler;
 import io.aeron.Publication;
 import io.aeron.Subscription;
 import io.aeron.driver.MediaDriver;
@@ -29,6 +30,17 @@ public class EmbedBaseSubscriber {
                 .dirDeleteOnShutdown(true);
 
         final Aeron.Context aeronContext = new Aeron.Context();
+
+        final FragmentHandler handler = (buffer, offset, length, header) -> {
+            final byte[] data = new byte[length];
+            buffer.getBytes(offset, data);
+
+            String s = new String(data);
+            var nano = Long.parseLong(s);
+            var tNow = System.nanoTime();
+            System.out.printf("%8d: Frag offset=%d length=%d delay=%d ns %d us payload: %s\n", 0, offset, length, tNow - nano, (tNow - nano) / 1000, s);
+        };
+
         aeronContext.aeronDirectoryName(dir).idleStrategy(idle);
 
         try (MediaDriver mediaDriver = MediaDriver.launchEmbedded(mediaDriverCtx);
@@ -41,27 +53,13 @@ public class EmbedBaseSubscriber {
             while (!pub.isConnected()) {
                 idle.idle();
             }
+            final FragmentAssembler assembler = new FragmentAssembler(handler);
 
-
-            final FragmentHandler handler = (buffer, offset, length, header) -> {
-                final byte[] data = new byte[length];
-                buffer.getBytes(offset, data);
-
-                String s = new String(data);
-                var nano = Long.parseLong(s);
-                var tNow = System.nanoTime();
-                System.out.printf("%8d: Frag offset=%d length=%d delay=%d ns %d us payload: %s\n", 0, offset, length, tNow - nano, (tNow - nano) / 1000, s);
-            };
-
-
-            while (sub.poll(handler, 1) <= 0) {
-                idle.idle();
+            while (true) {
+                final int fragmentsRead = sub.poll(assembler, 10);
+                idle.idle(fragmentsRead);
             }
-
-            // Keep the main thread alive
-            Thread.currentThread().join();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        } catch (Exception e) {
             System.err.println("Media Driver interrupted: " + e.getMessage());
         }
     }
