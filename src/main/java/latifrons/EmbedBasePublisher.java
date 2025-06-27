@@ -6,11 +6,12 @@ import io.aeron.Publication;
 import io.aeron.Subscription;
 import io.aeron.driver.MediaDriver;
 import io.aeron.logbuffer.FragmentHandler;
+import org.agrona.BufferUtil;
 import org.agrona.concurrent.*;
 
 import java.time.Instant;
 
-public class EmbedBaseSubscriber {
+public class EmbedBasePublisher {
     public static void main(String[] args) {
         String dir = System.getProperty("dir", "./aeron-driver");
         String channel = System.getProperty("channel", "aeron:ipc");
@@ -21,7 +22,7 @@ public class EmbedBaseSubscriber {
 
         IdleStrategy idle = toIdleStrategy(idleConfig);
 
-        final io.aeron.driver.MediaDriver.Context mediaDriverCtx = new io.aeron.driver.MediaDriver.Context()
+        final MediaDriver.Context mediaDriverCtx = new MediaDriver.Context()
                 .aeronDirectoryName(dir)
                 .dirDeleteOnStart(true)
                 .threadingMode(io.aeron.driver.ThreadingMode.DEDICATED)
@@ -33,17 +34,6 @@ public class EmbedBaseSubscriber {
 
         final Aeron.Context aeronContext = new Aeron.Context();
 
-        final FragmentHandler handler = (buffer, offset, length, header) -> {
-            final byte[] data = new byte[length];
-            buffer.getBytes(offset, data);
-
-            String s = new String(data);
-            var nano = Long.parseLong(s);
-            Instant now = Instant.now();
-            long epochNanos = now.getEpochSecond() * 1_000_000_000L + now.getNano();
-            System.out.printf("%8d: Frag offset=%d length=%d delay=%d ns %d us payload: %s\n", epochNanos, offset, length, epochNanos - nano, (epochNanos - nano) / 1000, s);
-        };
-
         aeronContext.aeronDirectoryName(dir).idleStrategy(idle);
 
         try (MediaDriver mediaDriver = MediaDriver.launchEmbedded(mediaDriverCtx);
@@ -53,14 +43,40 @@ public class EmbedBaseSubscriber {
             System.out.println("Media driver started at " + mediaDriver.aeronDirectoryName());
             System.out.println("Media Driver is running. Press Ctrl+C to exit.");
 
-            while (!sub.isConnected()) {
+            while (!pub.isConnected()) {
                 idle.idle();
             }
-            final FragmentAssembler assembler = new FragmentAssembler(handler);
 
-            while (true) {
-                final int fragmentsRead = sub.poll(assembler, 10);
-                idle.idle(fragmentsRead);
+            final UnsafeBuffer buffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(256, 64));
+
+            while (true){
+                // publish current nano time as a string once a second
+                Instant now = Instant.now();
+                long epochNanos = now.getEpochSecond() * 1_000_000_000L + now.getNano();
+                String message = String.valueOf(epochNanos);
+                final int length = buffer.putStringWithoutLengthAscii(0, message);
+                long result = pub.offer(buffer, 0, length);
+                if (result < 0) {
+                    if (result == Publication.BACK_PRESSURED) {
+                        System.out.println("Back pressured, retrying...");
+                    } else if (result == Publication.NOT_CONNECTED) {
+                        System.out.println("Publication not connected, waiting...");
+                    } else if (result == Publication.ADMIN_ACTION) {
+                        System.out.println("Admin action required, waiting...");
+                    } else {
+                        System.err.println("Failed to send message: " + result);
+                    }
+                } else {
+                    System.out.printf("%8d: Published message: %s%n", epochNanos, message);
+                }
+                idle.idle(); // Idle to avoid busy waiting
+                try {
+                    Thread.sleep(1000); // Sleep for 1 second before sending the next message
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    System.err.println("Publisher interrupted: " + e.getMessage());
+                    break;
+                }
             }
         } catch (Exception e) {
             System.err.println("Media Driver interrupted: " + e.getMessage());
