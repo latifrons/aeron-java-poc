@@ -28,8 +28,11 @@ public class EmbedBaseSubscriber {
                 .sharedIdleStrategy(idle)
                 .dirDeleteOnShutdown(true);
 
+        final Aeron.Context aeronContext = new Aeron.Context();
+        aeronContext.aeronDirectoryName(dir).idleStrategy(idle);
+
         try (MediaDriver mediaDriver = MediaDriver.launchEmbedded(mediaDriverCtx);
-             Aeron aeron = Aeron.connect();
+             Aeron aeron = Aeron.connect(aeronContext);
              Subscription sub = aeron.addSubscription(channel, streamId);
              Publication pub = aeron.addPublication(channel, streamId)) {
             System.out.println("Media driver started at " + mediaDriver.aeronDirectoryName());
