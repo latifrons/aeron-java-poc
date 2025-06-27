@@ -8,6 +8,8 @@ import io.aeron.driver.MediaDriver;
 import io.aeron.logbuffer.FragmentHandler;
 import org.agrona.concurrent.*;
 
+import java.time.Instant;
+
 public class EmbedBaseSubscriber {
     public static void main(String[] args) {
         String dir = System.getProperty("dir", "./aeron-driver");
@@ -37,8 +39,9 @@ public class EmbedBaseSubscriber {
 
             String s = new String(data);
             var nano = Long.parseLong(s);
-            var tNow = System.nanoTime();
-            System.out.printf("%8d: Frag offset=%d length=%d delay=%d ns %d us payload: %s\n", tNow, offset, length, tNow - nano, (tNow - nano) / 1000, s);
+            Instant now = Instant.now();
+            long epochNanos = now.getEpochSecond() * 1_000_000_000L + now.getNano();
+            System.out.printf("%8d: Frag offset=%d length=%d delay=%d ns %d us payload: %s\n", epochNanos, offset, length, epochNanos - nano, (epochNanos - nano) / 1000, s);
         };
 
         aeronContext.aeronDirectoryName(dir).idleStrategy(idle);
