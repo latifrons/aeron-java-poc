@@ -45,7 +45,7 @@ public class EmbedBasePublisher {
                 String s = new String(data);
                 var nano = Long.parseLong(s);
                 var tNow = System.nanoTime();
-                System.out.printf("%8.d: Frag offset=%d length=%d delay=%d ns %d us payload: %s\n", 0, offset, length, tNow - nano, (tNow - nano) / 1000, s);
+                System.out.printf("%8d: Frag offset=%d length=%d delay=%d ns %d us payload: %s\n", 0, offset, length, tNow - nano, (tNow - nano) / 1000, s);
             };
 
 
