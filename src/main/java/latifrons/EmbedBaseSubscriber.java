@@ -7,7 +7,7 @@ import io.aeron.driver.MediaDriver;
 import io.aeron.logbuffer.FragmentHandler;
 import org.agrona.concurrent.*;
 
-public class EmbedBasePublisher {
+public class EmbedBaseSubscriber {
     public static void main(String[] args) {
         String dir = System.getProperty("dir", "./aeron-driver");
         String channel = System.getProperty("channel", "aeron:ipc");
