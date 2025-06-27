@@ -14,6 +14,8 @@ public class EmbedBaseSubscriber {
         int streamId = Integer.parseInt(System.getProperty("streamId", "10"));
         String idleConfig = System.getProperty("idle", "yield");
 
+        System.out.printf("dir=%s channel=%s streamId=%d idleConfig=%s%n", dir, channel, streamId, idleConfig);
+
         IdleStrategy idle = toIdleStrategy(idleConfig);
 
         final io.aeron.driver.MediaDriver.Context mediaDriverCtx = new io.aeron.driver.MediaDriver.Context()
