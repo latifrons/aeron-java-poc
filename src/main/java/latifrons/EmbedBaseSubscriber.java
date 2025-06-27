@@ -9,10 +9,10 @@ import org.agrona.concurrent.*;
 
 public class EmbedBaseSubscriber {
     public static void main(String[] args) {
-        String dir = System.getProperty("INJ_DIR", "./aeron-driver");
-        String channel = System.getProperty("INJ_CHANNEL", "aeron:ipc");
-        int streamId = Integer.parseInt(System.getProperty("INJ_STREAM_ID", "10"));
-        String idleConfig = System.getProperty("INJ_IDLE", "yield");
+        String dir = System.getProperty("dir", "./aeron-driver");
+        String channel = System.getProperty("channel", "aeron:ipc");
+        int streamId = Integer.parseInt(System.getProperty("streamId", "10"));
+        String idleConfig = System.getProperty("idle", "yield");
 
         IdleStrategy idle = toIdleStrategy(idleConfig);
 
