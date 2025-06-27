@@ -64,10 +64,6 @@ public class EmbedBaseSubscriber {
             Thread.currentThread().interrupt();
             System.err.println("Media Driver interrupted: " + e.getMessage());
         }
-
-        io.aeron.driver.MediaDriver.launchEmbedded(mediaDriverCtx);
-
-
     }
 
     public static IdleStrategy toIdleStrategy(String idle) {
