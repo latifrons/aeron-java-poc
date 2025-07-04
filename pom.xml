@@ -22,7 +22,7 @@
         <dependency>
             <groupId>io.aeron</groupId>
             <artifactId>aeron-all</artifactId>
-            <version>1.47.5</version>
+            <version>1.48.4</version>
         </dependency>
         <!-- SLF4J API -->
         <dependency>

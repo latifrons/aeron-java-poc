@@ -5,16 +5,19 @@ import io.aeron.driver.ThreadingMode;
 import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.agrona.concurrent.NoOpIdleStrategy;
+import org.agrona.concurrent.YieldingIdleStrategy;
 
 public class MediaLauncher {
     public static void main(String[] args) {
         var dir = System.getProperty("aeron.dir", "./aeron-driver");
-        var strategy = new BackoffIdleStrategy(10,5,1000L,20000000L);
+//        var strategy = new BackoffIdleStrategy(10,5,1000L,20000000L);
+//        var strategy = new BackoffIdleStrategy(10,5,100L,400L);
+        var strategy = new YieldingIdleStrategy();
 
         final MediaDriver.Context mediaDriverCtx = new MediaDriver.Context()
                 .aeronDirectoryName(dir)
                 .dirDeleteOnStart(true)
-                .threadingMode(ThreadingMode.DEDICATED)
+                .threadingMode(ThreadingMode.SHARED)
                 .conductorIdleStrategy(strategy)
                 .senderIdleStrategy(strategy)
                 .receiverIdleStrategy(strategy)
@@ -23,6 +26,7 @@ public class MediaLauncher {
 //        final MediaDriver mediaDriver = MediaDriver.launchEmbedded(mediaDriverCtx);
 
         MediaDriver mediaDriver = MediaDriver.launch(mediaDriverCtx);
+
 
         // keep the media driver running
         System.out.println("Media driver started at " + mediaDriver.aeronDirectoryName());

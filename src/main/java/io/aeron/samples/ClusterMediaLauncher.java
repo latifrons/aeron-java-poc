@@ -29,6 +29,7 @@ public class ClusterMediaLauncher {
 
         String ingressHostnamesStr = "localhost,localhost,localhost";
         String clusterHostnamesStr = "localhost,localhost,localhost";
+
         var ingressHostnames = Arrays.asList(ingressHostnamesStr.split(","));
         var clusterHostnames = Arrays.asList(clusterHostnamesStr.split(","));
 
@@ -62,7 +63,11 @@ public class ClusterMediaLauncher {
              ClusteredServiceContainer container = ClusteredServiceContainer.launch(
                      clusterConfig.clusteredServiceContext())) {
             System.out.println("Started Cluster Node...");
-            System.out.println("Cluster directory is " + clusterConfig.consensusModuleContext().clusterDir());
+            System.out.println("Media Driver is running at " + clusteredMediaDriver.mediaDriver().aeronDirectoryName());
+            System.out.println("Consensus is running at " + clusteredMediaDriver.consensusModule().context().aeronDirectoryName());
+            System.out.println("Archive is running at " + clusteredMediaDriver.archive().context().aeronDirectoryName());
+            System.out.println("Container cluster dir " + container.context().clusterDir());
+            System.out.println("Container aeron dir " + container.context().aeronDirectoryName());
             barrier.await();
             System.out.println("Exiting");
         }
