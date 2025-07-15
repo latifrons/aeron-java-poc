@@ -29,6 +29,8 @@ public class ClusterMediaLauncher {
 
         String ingressHostnamesStr = "localhost,localhost,localhost";
         String clusterHostnamesStr = "localhost,localhost,localhost";
+//        String ingressHostnamesStr = "localhost";
+//        String clusterHostnamesStr = "localhost";
 
         var ingressHostnames = Arrays.asList(ingressHostnamesStr.split(","));
         var clusterHostnames = Arrays.asList(clusterHostnamesStr.split(","));
@@ -38,9 +40,10 @@ public class ClusterMediaLauncher {
         final ClusterConfig clusterConfig = ClusterConfig.create(
                 nodeId, ingressHostnames, clusterHostnames, PORT_BASE, new EchoService());
 
-        var strategy = new BackoffIdleStrategy(10,5,1000L,20000000L);
+        var strategy = new BackoffIdleStrategy(10, 5, 1000L, 20000000L);
 
         clusterConfig.mediaDriverContext()
+                .dirDeleteOnStart(true)
                 .threadingMode(ThreadingMode.DEDICATED)
                 .conductorIdleStrategy(strategy)
                 .senderIdleStrategy(strategy)
@@ -51,23 +54,26 @@ public class ClusterMediaLauncher {
         clusterConfig.aeronArchiveContext().errorHandler(errorHandler("Aeron Archive"));
         clusterConfig.consensusModuleContext().errorHandler(errorHandler("Consensus Module"));
         clusterConfig.clusteredServiceContext().errorHandler(errorHandler("Clustered Service"));
-//        clusterConfig.consensusModuleContext().ingressChannel("aeron:udp?endpoint=localhost:9010|term-length=64k");
-        clusterConfig.consensusModuleContext().ingressChannel("aeron:udp?term-length=64k");
+        clusterConfig.consensusModuleContext().ingressChannel("aeron:udp?endpoint=localhost:" + (11010 + nodeId * 100));
+//        clusterConfig.consensusModuleContext().egressChannel("aeron:udp?endpoint=localhost:" + (9011 + 0 * 100));
+//        clusterConfig.consensusModuleContext().ingressChannel("aeron:udp?term-length=64k");
         clusterConfig.consensusModuleContext().deleteDirOnStart(false); //true to always start fresh
 
 
         try (ClusteredMediaDriver clusteredMediaDriver = ClusteredMediaDriver.launch(
                 clusterConfig.mediaDriverContext(),
                 clusterConfig.archiveContext(),
-                clusterConfig.consensusModuleContext());
-             ClusteredServiceContainer container = ClusteredServiceContainer.launch(
-                     clusterConfig.clusteredServiceContext())) {
+                clusterConfig.consensusModuleContext())) {
+//             ClusteredServiceContainer container = ClusteredServiceContainer.launch(
+//                     clusterConfig.clusteredServiceContext())) {
             System.out.println("Started Cluster Node...");
             System.out.println("Media Driver is running at " + clusteredMediaDriver.mediaDriver().aeronDirectoryName());
+            System.out.println("Consensus is " + clusteredMediaDriver.consensusModule().context());
             System.out.println("Consensus is running at " + clusteredMediaDriver.consensusModule().context().aeronDirectoryName());
+
             System.out.println("Archive is running at " + clusteredMediaDriver.archive().context().aeronDirectoryName());
-            System.out.println("Container cluster dir " + container.context().clusterDir());
-            System.out.println("Container aeron dir " + container.context().aeronDirectoryName());
+//            System.out.println("Container cluster dir " + container.context().clusterDir());
+//            System.out.println("Container aeron dir " + container.context().aeronDirectoryName());
             barrier.await();
             System.out.println("Exiting");
         }

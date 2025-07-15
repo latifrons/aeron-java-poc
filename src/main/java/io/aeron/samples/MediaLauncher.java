@@ -7,6 +7,8 @@ import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.agrona.concurrent.NoOpIdleStrategy;
 import org.agrona.concurrent.YieldingIdleStrategy;
 
+import java.io.File;
+
 public class MediaLauncher {
     public static void main(String[] args) {
         var dir = System.getProperty("aeron.dir", "./aeron-driver");
@@ -29,7 +31,8 @@ public class MediaLauncher {
 
 
         // keep the media driver running
-        System.out.println("Media driver started at " + mediaDriver.aeronDirectoryName());
+
+        System.out.println("Media driver started at " + new File(mediaDriver.aeronDirectoryName()).getAbsolutePath());
         System.out.println("Media Driver is running. Press Ctrl+C to exit.");
         try {
             Thread.currentThread().join();  // Keep the main thread alive
